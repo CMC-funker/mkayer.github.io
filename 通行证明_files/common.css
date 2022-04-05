@@ -1,0 +1,59 @@
+body{padding:0;background:#F9F9F9; }
+.mui-content{background:#F9F9F9;max-width: 600px;margin: 0 auto;}
+
+p{ color: #181818;}
+/*首页9宫格样式修改*/
+.mui-grid-view.mui-grid-9{background-color: #fefefe;}
+.mui-grid-view.mui-grid-9 .mui-table-view-cell{padding:11px 0;}
+/*通用弹框样式*/
+#topPopover{width:120px}
+#topPopover .mui-popover-arrow{left: auto;right: 6px; z-index: 10;}
+#topPopover .mui-table-view-cell{text-align:center;}
+
+/*通用表格样式*/
+.table-bordered{border: 1px solid #ddd;}
+.table{width: 100%;max-width: 100%; }
+.table-bordered>thead>tr>th, .table-bordered>tbody>tr>th, .table-bordered>tfoot>tr>th, .table-bordered>thead>tr>td, .table-bordered>tbody>tr>td, .table-bordered>tfoot>tr>td{border: 1px solid #ddd;}
+.table-bordered>thead>tr>th{background-color: #f3f7fc;border-bottom-width: 1px;}
+.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th{background-color: #F9F9F9;}
+.table-striped>tbody>tr:nth-child(even)>td, .table-striped>tbody>tr:nth-child(even)>th{background-color: #fff;}
+.table>thead>tr>th, .table>thead>tr>td{padding:8px 2px;line-height: 1.4;}
+.table>tbody>tr>th,.table>tbody>tr>td,.table>tfoot>tr>th,.table>tfoot>tr>td{padding:8px 2px;line-height: 1.4;}
+.tabmintxt{font-size:12px;}
+/*通用编辑页面*/
+.mui-input-group .mui-input-row{height:auto;}
+.mui-input-group .mui-input-row select~.selectaftericon{color: #bbb;position: absolute;top: 8px;right: 10px;}
+.checkboxdiv .mui-checkbox label{padding-top:7px;padding-bottom:7px;}
+/*表单右侧的文本*/
+.mui-input-row .labright{float: right;width: 65%;margin-bottom: 0;padding-left: 0;line-height: 1.1; padding: 11px 15px;}
+/*多行*/
+.multi_row p{padding: 5px 15px; margin-bottom: 0;}
+.multi_row h4{font-family: 'Helvetica Neue',Helvetica,sans-serif;padding: 15px 15px 5px 15px;margin:0;font-weight: 200;font-size: 16px;}
+.multi_row{position: relative;clear: left;overflow: hidden;}
+.multi_row span{line-height:38px;}
+.multi_row:after{position: absolute;right: 0;bottom: 0;left: 15px;height: 1px;content: '';-webkit-transform: scaleY(.5);transform: scaleY(.5);background-color: #c8c7cc;}
+.multi_row .multi_input_row{height: auto;position: relative;    clear: left;
+    overflow: hidden;}
+.multi_row .multi_input_row label{font-family: 'Helvetica Neue',Helvetica,sans-serif;line-height: 1.1;width: 35%;padding: 11px 15px;}
+
+/*附件上传样式*/
+.upimg_list{margin:0 auto;background-size: cover;padding: 10px 10px;overflow: hidden;}
+.upimg_item{width: 60px;height: 60px;background-size: 100% 100%;display: inline-block;position: relative;border-radius: 5px;margin:5px;vertical-align: top;} 
+.upimg_item .upimg_bg{height: 60px;width: 60px;border-radius: 10px;border: 1px solid #ccc;display: inline-block;text-align: center;background-size: 60px 60px;z-index: 1;}
+.upimg_item .inputupfile {position: absolute;left: 10px;top: 10px;width: 40px;height: 40px;opacity: 0;}
+.upimg_item .upimg_plus:before{font-family: Muiicons;content: '\e468';font-size: 58px;color: #ccc;line-height: 58px;} 
+.upimg_item .upimg_close{position: absolute;right: -6px;top: -16px;z-index: 2;}
+.upimg_item .upimg_close:before{font-family: Muiicons;content: '\e434';font-size:22px;color:#515151;}
+
+/*扫码黄色标*/
+.saomablock{height:120px;}
+.saomadiv{position:fixed;margin-left:-60px;left:50%;bottom:20px;z-index:3;width:120px;height:120px;background:#fbea3e;border-radius:120px;text-align:center;padding-top:30px;box-shadow:2px 2px 15px #e5f384}
+.saomadiv b{ color:#363636;}
+.saomadiv .saomatxt{font-size:16px;margin-top:8px;}
+/*蓝色添加浮动标*/
+.adddiv{position: fixed;right: 30px;bottom: 25px;z-index: 3;width: 60px;height: 60px;background: #3eadfb;border-radius: 60px;text-align: center;padding-top: 0;box-shadow: 0 6px 9px #92d1fe;}
+
+
+/*全局loading*/
+#srloading{position: fixed;z-index: 9999; left: 0; top:0;width: 100%; height:100%}
+ 

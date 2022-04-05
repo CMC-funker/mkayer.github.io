@@ -1,0 +1,741 @@
+var BASE_URL = "http://ybxj.cmc.edu.cn/sssw";
+if(sessionStorage.getItem("loadingstatus")!="success"){
+   //checkLogin();
+   //check你妈  不准！
+} 
+//发布为app时将下面的变量清空，发布到易班轻应用填写“yiban”不显示返回按钮
+var srback = "yiban";
+$(function(){
+	//是否显示返回按钮
+ 	if(srback=="yiban"){
+ 		$(".mui-action-back").hide();
+	}
+});
+    //获取易班设备号uuid 使用前必须加载../libs/yb_h5.js
+srToastInit();
+
+function srToastInit(){
+    var srloading = document.createElement("div");
+    srloading.id="srloading";
+    srloading.setAttribute('style',"display:none");
+    var srtoast="<div class=\"mui-toast-container mui-active\">";
+    srtoast+="<div class=\"mui-toast-message\">";
+    srtoast+="<img width=\"30\" src=\"..\/images\/loading.gif\"><br>";
+    srtoast+="<div id=\"srtoasttxt\">   </div>";
+    srtoast+="</div></div>";
+    srloading.innerHTML=srtoast;
+    document.body.appendChild(srloading);
+}
+function srToastShow(){
+    $("#srloading").hide();
+}
+function srToastHide(){
+    $("#srloading").hide();
+}
+
+function srToastTxt(txt,timeout) {
+    if($("#srloading").is(":hidden")){
+	    txt = " ";
+        $("#srloading").hide(); //让登录失败的小方块闭嘴
+    }
+    if(srisEmpty(txt)) {
+        //txt = "登陆超时，请关闭后重新打开";
+        //$("#srtoasttxt").text(txt);
+    }else{
+        //$("#srtoasttxt").text(txt);
+        //if(srisEmpty(timeout)){
+        //    setTimeout(function() {$("#srloading").hide();$("#srtoasttxt").text("请等待");}, 2000);
+        //}else{
+        //    setTimeout(function() {$("#srloading").hide();$("#srtoasttxt").text("请等待");}, timeout);
+        //}
+    }
+}
+
+function checkLogin() {
+    var loginflag = false;
+    srToastHide();
+    $.ajax(BASE_URL + "/srappverify.do?clienttype=srapp&id=yiban", {
+        contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+        async: "false",
+        dataType: "jsonp",
+        jsonp: "jsoncallback",
+        type: "post",
+        success: function(data) {
+            if("success" == data.status) {
+                loginflag = true;
+                srToastHide();
+            }
+        },error:function(xhr,type,errorThrown){
+            srToastTxt("hidden");
+        }
+    });
+    return loginflag;
+}
+//登录异常重定向
+$.ajaxSetup({
+    error:function(xhr,type,errorThrown){
+        if("404"==xhr.status){
+            checkLogin();
+        }else if("200"==xhr.status){
+            checkLogin();
+        }
+    },
+    complete: function(xhr, status) {
+        //若HEADER中含有REDIRECT说明后端想重定向
+        if(xhr.readyState && "REDIRECT" == xhr.getResponseHeader("REDIRECT")) {
+            srToastTxt();
+            var iframe;
+            try {
+                iframe = document.createElement('<iframe></iframe>');
+            } catch(e) {
+                iframe = document.createElement('iframe');
+            }
+            iframe.width = '0';
+            iframe.height = '0';
+            iframe.src = xhr.getResponseHeader("CONTENTPATH");
+            if(iframe.attachEvent) {
+                iframe.attachEvent("onload", function() {
+                    //alert("@@@Local iframe is now loaded.");
+                    var messenger = new Messenger('parent', 'srMessenger');
+                    messenger.listen(function(data) {
+                        var json = eval("(" + data + ")");
+                        if(json.status=="success"){
+                            srToastHide();
+                        }
+                    });
+                });
+            } else {
+                iframe.onload = function() {
+                    //alert("###Local iframe is now loaded.");
+                    var messenger = new Messenger('parent', 'srMessenger');
+                    messenger.listen(function(data) {
+                        var json = eval("(" + data + ")");
+                        if(json.status=="success"){
+                            srToastHide();
+                        }
+                    });
+                };
+            }
+            document.body.appendChild(iframe);
+        }
+    }
+});
+
+
+/**
+ * 日期选择控件
+ * @param {Object} obj 选中组建的对象
+ * @param {Object} type 日期类型，date,time,month
+ * @param {Object} nowyear 给定任何一个字符串，则日期控件开始日期为当年日期的年度
+ * @param {Object} beginYear 开始日期年份
+ * @param {Object} endYear  结束日期年份
+ */
+function srchooseDate(obj,type,nowyear,beginYear,endYear) {
+    var sroptions = {};
+    if(!srisEmpty(type)){
+        sroptions.type=type;
+    }
+    if(!srisEmpty(nowyear)){
+        var now = new Date();
+        var year = now.getFullYear();
+        sroptions.beginYear=year;
+    }else{
+        if(!srisEmpty(beginYear)){
+            sroptions.beginYear=beginYear;
+        }
+    }
+    if(!srisEmpty(endYear)){
+        sroptions.endYear=endYear;
+    }
+    //console.log(sroptions);
+    //设定年份区间：{"type":"date","beginYear":2014,"endYear":2016}
+    //设定选中的时间：{"value":"2015-10-10 10:10","beginYear":2010,"endYear":2020}
+    //指定类型：{"type":"date"}选择日期  ；{"type":"time"}选择时间  ；{"type":"month"}选择月份  
+    var dtPicker = new mui.DtPicker(sroptions);
+    //设定选中的时间
+    dtPicker.setSelectedValue(obj.value);
+    dtPicker.show(function(selectItems) {
+        obj.value = selectItems.text;
+        //console.log(selectItems.y); //{text: "2016",value: 2016} 
+        //console.log(selectItems.m); //{text: "05",value: "05"} 
+    })
+}
+
+function srCheckErrorGo(data,gourl){
+    if(data.status=="error"){
+        mui.toast(data.message);
+        if(gourl){
+            setTimeout(function(){
+                mui.openWindow({
+                    url:gourl
+                });
+            },2000);
+        }
+    }
+}
+function srCheckSuccessGo(data,gourl){
+    if(data.status=="success"){
+        srToastTxt(data.message);
+        if(gourl){
+            setTimeout(function(){
+                mui.openWindow({
+                    url:gourl
+                });
+            },2000);
+        }
+    }
+}
+
+//edit页面初始化数据
+function srSetDataValue(data){
+    if(data){
+        $.each(data,function (index,morenzhi) {
+            //判断index所在的id是否存在，存在就赋值 
+            if(document.getElementById(index)){
+                var thisNode = document.getElementById(index);
+                if("INPUT" == thisNode.tagName){
+                    if("checkbox"==thisNode.type){
+                        //！！是否类型的多选 值相同的checked
+                        if(morenzhi==thisNode.value){
+                            $(thisNode).prop("checked", true);
+                        }
+                    }else{
+                        //"text" "hidden" "number" "datetime-local"==thisNode.type
+                        thisNode.value=morenzhi;
+                    }
+                }else if("SELECT" == thisNode.tagName){ 
+                    if("select-one"==thisNode.type){
+                        //下拉单选,值相同的selected //prop兼容苹果手机
+                        $.each($("#"+index).children("option"),function () {
+                            if(morenzhi==$(this).val()){
+                                $(this).prop("selected", "selected");
+                            }
+                        }); 
+                    } 
+                }else if("IMG" == thisNode.tagName){
+                    if(null != morenzhi && "" != morenzhi){
+                        thisNode.src= morenzhi;
+                    }
+                }else{
+                   // SPAN P H4 TEXTAREA
+                    thisNode.innerHTML=morenzhi;
+                } 
+                //TODO后续继续添加类型
+            } 
+        });
+    }
+}
+//验证银行卡号 银行
+function checkBankCard(yhkh,kaihuhang){
+	yhkh = yhkh.replace(/\s+/g,"");
+	if(checkNumber(yhkh)){
+		$.ajax("https://ccdcapi.alipay.com/validateAndCacheCardInfo.json?cardNo="+yhkh+"&cardBinCheck=true", {
+			async : false,
+	        type: "get",
+	        success: function(data) {
+	            if(data.validated){
+	            	if(!srisEmpty(data.bank)){
+	            		if(!srisNull(bank_map)){
+							if(srisEmpty(bank_map[data.bank])){
+								srToastTxt("您输入的银行卡开户行不存在");
+							}else{
+								if(!srisEmpty(kaihuhang) && bank_map[data.bank] != kaihuhang){
+									srToastTxt("此卡为"+bank_map[data.bank]+"卡，请输入【"+kaihuhang+"】卡号");
+								}else{
+									yhkhYanZhengSuccess(data);
+								}
+							}
+						}else{
+							srToastTxt("银行卡所在银行未验证，请联系管理员");
+						}
+	            	}else{
+						srToastTxt("您输入的银行卡号未验证通过");
+					}
+	            }else{
+	            	srToastTxt("银行卡号验证失败，请仔细检查");
+	            }
+	        },error:function(xhr,type,errorThrown){
+	        	srToastTxt("接口错误");
+	        }
+	    });
+   }else{
+   		srToastTxt("银行卡号为数字，请正确输入");
+   }
+}
+function srLoadCodeData(data,addnode,removeOption){
+	if(removeOption){
+		$("#"+addnode).find("option").remove();
+		var qxzoption = $("<option></option>");
+		qxzoption.attr("value", "");
+        qxzoption.text("请选择");
+		$("#"+addnode).append(qxzoption);
+	}
+    if(!srisEmpty(data)){
+        for(var i = 0; i < data.length; i++) {
+            var addoption = $("<option></option>");
+            addoption.attr("value", data[i].sr_frame_codedata_id);
+            addoption.text(data[i].sr_frame_codedata_value);
+            $("#"+addnode).append(addoption);
+        }
+    }
+}
+function srLoadCodeDataValueToValue(data,addnode,removeOption){
+	if(removeOption){
+		$("#"+addnode).find("option").remove();
+		var qxzoption = $("<option></option>");
+		qxzoption.attr("value", "");
+        qxzoption.text("请选择");
+		$("#"+addnode).append(qxzoption);
+	}
+    if(!srisEmpty(data)){
+        for(var i = 0; i < data.length; i++) {
+            var addoption = $("<option></option>");
+            addoption.attr("value", data[i].sr_frame_codedata_value);
+            addoption.text(data[i].sr_frame_codedata_value);
+            $("#"+addnode).append(addoption);
+        }
+    }
+}
+
+function srSetUploadImg(data){
+    $.each(data,function (index,element){
+        var fileId = element.sr_frame_fileinfo_id;
+        var path = element.sr_frame_fileinfo_filepath;
+        path = path.replace(/\\/g,"/");  
+        var filepath = BASE_URL+'/'+ path+element.sr_frame_fileinfo_filecode+element.sr_frame_fileinfo_fileext;
+        var inputFileID = sessionStorage.getItem("inputFileID");
+        createUploadImgNode(inputFileID,fileId,filepath);
+        
+    });
+}
+
+function reflushUploadImgDOM(fileId){
+    if($("#"+fileId).length > 0){
+        $("#"+fileId).replaceWith("<input class=\"inputupfile\" id=\"" + fileId + "\" type=\"file\" name=\"" + fileId + "\" value=\"\"  accept=\"image/*;capture=camera\"/>");
+    }
+    srToastHide();
+}
+
+function srUploadImg(uploadAjaxUrl){
+    var inputFileID = sessionStorage.getItem("inputFileID");
+    var inputYeWuID = sessionStorage.getItem("inputYeWuID");
+    srToastHide();
+    //找到要预览的图片img标签，亦可动态生成
+    var fileName = $("#upimgname").val();
+    if("" == fileName){
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("请先填写附件名，再选择文件上传！");
+        return false;
+    }
+    if($("#"+inputFileID).length == 0 || $("#"+inputFileID)[0].files.length == 0 || "undefined" == typeof($("#"+inputFileID)[0].files[0])){
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("上传文件未选择");
+        return false;
+    }
+    var fp = $("#"+inputFileID)[0].files[0]; 
+    if("image/jpg" != fp.type && "image/jpeg" != fp.type && "image/png" != fp.type){
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("请上传jpg、png的证明文件");
+        return false;
+    }
+    if(Math.round(fp.size / 1024 / 1024) >= 10){ //3M
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("文件大小过大，请处理到3M以下图片再上传");
+        return false;
+    }else if(fp.size <= 0){
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("上传文件大小有误");
+        return false;
+    }
+    if(!srisNull(inputYeWuID)  && "" != $("#"+inputYeWuID).val() && "undefined" != typeof($("#"+inputFileID)[0].files[0])){
+        sessionStorage.setItem("bgurl",window.URL.createObjectURL(fp));
+        var jsonStr = "{filename:\"" + fileName + "\"," + inputYeWuID + ":\"" +  $("#"+inputYeWuID).val() + "\"}"; 
+        $.ajaxFileUpload({
+            type: "post",
+            async: true,
+            dataType: "jsonp",
+            fileElementId: inputFileID,
+            contentType: false,
+            processData: false,
+            url: BASE_URL + uploadAjaxUrl + "?clienttype=srapp",
+            data: eval('('+jsonStr+')'),
+            error: function (data, status, e){
+                mui.toast("网络异常，上传文件失败");
+                srToastHide();
+            }
+        });
+    }else{
+        reflushUploadImgDOM(inputFileID);
+        mui.toast("网络异常");
+        return false;
+    }
+} 
+var delcount = 1;
+function createUploadImgNode(inputFileID,fileId,filePath){
+    var sb = "<div class=\"upimg_item\">";
+    sb += "<div class=\"upimg_bg\"";
+    sb += " style=\"background-image:url('" + filePath + "')\">";
+    sb += "<span class=\"upimg_close\" id=\"srfileplus" + fileId + "\"";
+    sb += "onclick=\"srDelUpladImg('"+fileId+"')\">";//
+    sb += "</span></div></div>";
+    $(sb).insertBefore($("#"+inputFileID).parent()); 
+}
+
+function srUploadFileSuccess(fileId){
+    var inputFileID = sessionStorage.getItem("inputFileID");
+    var filePath = sessionStorage.getItem("bgurl");
+    createUploadImgNode(inputFileID,fileId,filePath);
+    //上传后 删除上传文件的文件名和文件内容
+    $(inputFileID).val("");
+    reflushUploadImgDOM(inputFileID);
+    $("#upimgname").val("");
+    sessionStorage.setItem("bgurl","");
+    srToastHide();
+}
+
+function srDelUpladImg(fileId){
+    if(srisEmpty(fileId)){
+        return false;
+    }
+    srToastShow();
+    var btnArray = [ '确定删除','取消'];
+    mui.confirm('确认删除该条记录？', '提示',btnArray,function(e){
+        if (e.index == 0 && delcount==1) {
+            delcount++;
+            $.ajax({
+                type: 'POST',
+                url: BASE_URL+'/srsys/delSrFrameFileInfo.do?clienttype=srapp&fileid='+fileId, 
+                data: '',
+                dataType:"jsonp",
+                jsonp: "jsoncallback",
+                beforeSend: function() {
+                    $('#srfileplus'+fileId).parent().parent().remove();
+                },
+                success: function(data) {
+                    if(data.status=="success"){
+                        mui.toast(data.message);
+                    }else if(data.status=="error"){
+                        mui.toast(data.message);
+                    }
+                    delcount=1;
+                    srToastHide();
+                },
+                error: function(data) {
+                    delcount=1;
+                    mui.toast("网络异常");
+                    srToastHide();
+                }
+            });
+        }else {
+            srToastHide();
+        }
+    });
+}
+//必填测试
+function srRequireTest(){
+    var testOk = true;//由于return false不生效，异步弹框，所以加个错误数量
+    var requiredDOM = document.getElementsByClassName('required');
+    if(requiredDOM!=null){
+        mui.each(requiredDOM,function (index,element) {
+            if(srisEmpty(requiredDOM[index].value)){
+                var srtishi = requiredDOM[index].getAttribute("srtishi");
+                requiredDOM[index].focus();
+                if(srtishi != null || srtishi != ""){
+                    mui.toast(srtishi);
+                }
+                testOk = false;
+                return false;
+            }
+        });
+    }
+    return testOk;
+}
+
+//form验证
+function srCheckForm(){
+    var checkDom=$(":input");
+    var testOk = true;
+    $.each(checkDom,function(i,v){
+    	if(!srisEmpty($(this).val())){
+            var testStr = $(this).val();
+            testStr = testStr.replace(/[\r\n]/g, " "); //去掉回车换行
+            testStr = testStr.replace(/[\"]/g, "“"); //去掉引号
+            $(this).val(testStr);
+        }
+	var labelName=$(this).parent().children("label").text();
+        //如果没取到再取srtishi
+        var srtishi = this.getAttribute("srtishi");
+        if(!srisEmpty(srtishi)){
+            labelName = srtishi;
+        }
+        if($(this).hasClass('required')){
+            if(null == this.value || "" == this.value){
+                testOk = false;
+                $(this).focus();
+                var tishi = "必填";
+                if("SELECT" == this.tagName){
+                    tishi = "必选";
+                }
+                mui.toast(labelName + tishi);
+                return false;
+            }
+        }
+        if("undefined" != typeof($(this).attr("data-maxlength"))){
+            if($(this).val().length > 0 && $(this).val().length > $(this).attr("data-maxlength")){
+                testOk = false;
+                $(this).focus();
+                mui.toast(labelName + "填写长度超过" + $(this).attr("data-maxlength") + "位");
+                return false;
+            }
+        }
+        if("undefined" != typeof($(this).attr("data-length"))){
+            if($(this).val().length > 0 && $(this).val().length != $(this).attr("data-length")){
+                testOk = false;
+                $(this).focus();
+                mui.toast(labelName +"填写长度必须为" + $(this).attr("data-length") + "位");
+                return false;
+            }
+        }
+        if($(this).hasClass('checkNumber')){
+            if($(this).val().length > 0 && !checkNumber($(this).val())){
+                testOk = false;
+                $(this).focus();
+                mui.toast("请填写数字");
+                return false;
+            }
+        }
+        if($(this).hasClass('checkPhoneNumber')){
+            if($(this).val().length > 0 && !checkPhoneNumber($(this).val())){
+                testOk = false;
+                $(this).focus();
+                mui.toast("请填写正确的手机号");
+                return false;
+            }
+        }
+    });
+    checkDom=$("textarea");
+    $.each(checkDom,function(i,v){
+    	if("" != $(this).val()){
+            var testStr = $(this).val();
+            testStr = testStr.replace(/[\r\n]/g, " "); //去掉回车换行
+            testStr = testStr.replace(/[\"]/g, "“"); //去掉引号
+            $(this).val(testStr);
+        }
+    });
+    return testOk;
+}
+
+function srSubmitForm(form,ajaxurl,gourl){
+    var formserialize=$(form).serialize();
+    formserialize = encodeURI(encodeURI(formserialize));
+    if(ajaxurl.indexOf("?") != -1){//url有?
+    	ajaxurl += "&clienttype=srapp";
+    }else{
+    	ajaxurl += "?clienttype=srapp";
+    }
+    $.ajax(BASE_URL+ajaxurl,{
+        async : false,//同步请求
+        data:formserialize,
+        contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+        dataType: "jsonp",
+        jsonp: "jsoncallback",
+        type:'post',
+        success:function(data) {
+            if(data.status=="success"){
+                srToastTxt(data.message);
+                if(gourl){
+                	if("flush" == gourl){
+                        window.location.reload();
+                    }else{
+	                    setTimeout(function(){
+	                        mui.openWindow({
+	                            url:gourl
+	                        });
+	                        return false;
+	                    },1500);
+                    }
+                }
+            }else if(data.status=="error"){
+                 srToastTxt(data.message);
+            }
+            setTimeout(function(){
+                srToastHide();
+            },2000);
+        }
+    });
+}
+
+
+/**
+ * 删除记录  idname:id名  idvalue:id值   gourl:删除后跳转   空：不跳转;flush:刷新本页面;具体页面url
+ * @param {Object} ajaxurl
+ * @param {Object} idname
+ * @param {Object} idvalue
+ * @param {Object} gourl 删除后跳转 1空：不跳转  2.flush:刷新本页面  3.具体页面
+ */
+function srDelResult(ajaxurl,idname,idvalue,gourl){
+    $.ajax({
+        "type" : "post",
+        "async" : false,//同步请求
+        "dataType" : "jsonp",
+        "jsonp" : "jsoncallback", 
+        "url" : BASE_URL + ajaxurl + "?clienttype=srapp",
+        "data" : idname+"="+idvalue,
+        "success" : function(data) {
+            if(data.status=="success"){
+                mui.toast(data.message);
+                if(gourl){
+                    if("flush" == gourl){
+                        window.location.reload();
+                    }else{
+                        setTimeout(function(){
+                            mui.openWindow({
+                                url:gourl
+                            });
+                        },2000); 
+                    }
+                }
+            }
+            delcount=1; 
+        },"error" : function(XMLHttpRequest, textStatus, errorThrown) {
+            mui.toast('删除失败');
+            srToastHide();
+        }
+    }); 
+}
+
+function srMessager(){
+    /*监听上传文件的回调*/
+    var messenger = new Messenger('parent', 'srMessenger');
+    messenger.listen(function (data) {
+        var jsonObj = eval("(" + data + ")");
+        for (var i = 0; i < jsonObj.length; i++) {
+            if(jsonObj[i].message=="error"){ 
+                mui.toast(jsonObj[i].error); 
+            }else{
+                mui.toast(jsonObj[i].filename+"上传成功");
+                srUploadFileSuccess(jsonObj[i].fileid);
+            }
+        } 
+    });
+}
+
+//银行卡号输入样式
+function yhkhshuru(obj) {
+	var value = obj.value;
+	value = value.replace(/\s*/g, "");
+	var result = [];
+	for(var i = 0; i < value.length; i++) {
+		if(i % 4 == 0 && i != 0) {
+			result.push(" " + value.charAt(i));
+		} else {
+			result.push(value.charAt(i));
+		}
+	}
+	obj.value = result.join("");
+}
+//判断为空
+function srisNull( str ){
+	if ( str == "" ) return true;
+	var regu = "^[ ]+$";
+	var re = new RegExp(regu);
+	return re.test(str);
+}
+//js判断对象是否为空
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+function srisEmpty(value) {
+    // 本身为空直接返回true
+    if(value == null) return true;
+    //undefined判断
+    if(typeof(value) == "undefined") return true;
+    // 然后可以根据长度判断，在低版本的ie浏览器中无法这样判断。
+    if(value.length > 0) return false;
+    if(value.length === 0) return true;
+    //最后通过属性长度判断。
+    for(var key in value) {
+        if(hasOwnProperty.call(value, key)) return false;
+    }
+    //判断数字
+    if(value) return false;
+    return true;
+}
+//验证手机号码
+function checkPhoneNumber(str) {
+    var myreg=/^[1][3,4,5,6,7,8,9][0-9]{9}$/;
+    if (!myreg.test(str)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+//验证数字
+function checkNumber(str) {
+    var myreg=/^\d+$/;
+    if (!myreg.test(str)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+//删除HTML标签
+function removeHTMLTag(str) {
+    str = str.replace(/<\/?[^>]*>/g, '');
+    //去除HTML tag
+    str = str.replace(/[ | ]*\n/g, '\n');
+    //去除行尾空白
+    //str = str.replace(/\n[\s| | ]*\r/g,'\n'); //去除多余空行
+    str = str.replace(/ /ig, '');
+    //去掉
+    str = str.replace(/&nbsp;/ig, '');
+    return str;
+}
+
+function StringBuffer() {
+    this.__strings__ = new Array();
+}
+StringBuffer.prototype.append = function(str) {
+    this.__strings__.push(str);
+};
+StringBuffer.prototype.toString = function() {
+    return this.__strings__.join("");
+};
+//获取form表单的json格式的数据
+function SrgetFormJson(form) {
+    var o = {};
+    var a = $(form).serializeArray();
+    $.each(a, function() {
+        if (o[this.name] !== undefined) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return "["+JSON.stringify(o)+"]";;
+}
+
+
+//获取易班设备号uuid 使用前必须加载../libs/yb_h5.js
+function getYbUuid(){
+	var devuuid = sessionStorage.getItem("devuuid"); 
+	if(devuuid == null || devuuid == "undefined"){ 
+		mobile_api({action:'uuid',params:{},callback:'setYbUuid'}); 
+	}else{
+		return devuuid;
+	}
+}
+function setYbUuid(result){
+	if(typeof(result) == "undefined" || "该终端类型暂不支持使用" == result || result==''){
+		return false;
+	}
+	var uuidjobj =	eval('(' + result + ')'); 
+	if(typeof(uuidjobj) == "undefined" || uuidjobj=="" || typeof(uuidjobj.value) == "undefined" ||  uuidjobj.action != "uuid"){
+		//设备标识解析失败
+		return false;
+	}
+	//记录到页面缓存devuuid
+	sessionStorage.setItem('devuuid', uuidjobj.value);
+}
